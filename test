@@ -1,0 +1,15 @@
+## 计算出的充电需求偏少
+car_output = pd.read_csv('output/cars_step_day.csv')
+car_output['id'], _ = pd.factorize(car_output['trip_id'])
+car_output.set_index('id',inplace=True)
+result = car_output[car_output['current_state'] == 0].groupby('id').apply(lambda x:x)
+first_rows = result.groupby('id').first()
+last_rows = result.groupby('id').last()
+combined_rows = pd.concat([first_rows, last_rows])
+combined_rows['step'] = combined_rows['start_step']+combined_rows['step']
+step_length = f'{min_per_step} minutes'
+combined_rows['time'] = combined_rows['step'] * pd.Timedelta(step_length) + pd.Timestamp('2023-09-03 00:00:00')
+combined_rows['time'] = combined_rows['time'].astype(str)
+order = combined_rows[['trip_id','time','current_charge','current_node']]
+order.to_csv('output/order.csv')
+order
